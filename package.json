@@ -1,6 +1,10 @@
 {
+  "name": "42kl-coin",
+  "version": "0.0.1",
+  "author": "Eason Chai <echai2905@gmail.com>",
+  "license": "MIT",
   "scripts": {
-    "migrate": "truffle migrate --network development"
+    "migrate:dev": "truffle migrate --network development"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.2.0",

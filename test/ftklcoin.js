@@ -37,6 +37,7 @@ contract("FortyTwoKLCoin", (accounts) => {
 
   it("should not allow bob to mint", async () => {
     await utils.shouldThrow(instance.mint(alice, 1000, { from: bob }));
+    await utils.shouldThrow(instance.mint(bob, 1000, { from: bob }));
   });
 
   it("should allow alice to mint 1000 42KL Coin to herself", async () => {
@@ -45,5 +46,28 @@ contract("FortyTwoKLCoin", (accounts) => {
     assert.equal(balance, 1000, "Balance is not equal 1000!");
   });
 
-  xit("should allow bob to mint 1000 42KL Coin to himself after given access", async () => {});
+  it("should allow alice to mint 1000 42KL Coin to bob", async () => {
+    await instance.mint(bob, 1000, { from: alice });
+    const balance = await instance.balanceOf(bob);
+    assert.equal(balance, 1000, "Balance is not equal 1000!");
+  });
+
+  it("should allow bob to mint 1000 42KL Coin to himself after given access", async () => {
+    await instance.grantRole(MINTER_ROLE, bob, { from: alice });
+    await instance.mint(bob, 1000, { from: bob });
+    const balance = await instance.balanceOf(bob);
+    assert.equal(balance, 1000, "Balance is not equal 1000!");
+  });
+
+  it("should allow alice to send 500 to chad", async () => {
+    await instance.mint(alice, 1000, { from: alice });
+    await instance.transfer(chad, 500, { from: alice });
+    let balance;
+    balance = await instance.balanceOf(alice);
+    assert.equal(balance, 500, "Balance is not 500!");
+    balance = await instance.balanceOf(chad);
+    assert.equal(balance, 500, "Balance is not 500!");
+    balance = await instance.balanceOf(bob);
+    assert.equal(balance, 0, "Balance is not zero!");
+  });
 });

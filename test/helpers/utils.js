@@ -5,9 +5,16 @@ async function shouldThrow(promise) {
   } catch (err) {
     return;
   }
-  assert(flase, "The contract did not throw.");
+  assert(false, "The contract did not throw.");
 }
+
+// function keccak(text) {
+//   web3.sha3(web3.utils.padRight(web3.utils.asciiToHex(text), 66), {
+//     encoding: "hex",
+//   });
+// }
 
 module.exports = {
   shouldThrow,
+  // keccak,
 };

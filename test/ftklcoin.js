@@ -5,6 +5,8 @@ contract("FortyTwoKLCoin", (accounts) => {
   let instance;
   const [alice, bob, chad] = accounts;
 
+  const MINTER_ROLE = web3.utils.keccak256("MINTER_ROLE");
+
   beforeEach(async () => {
     instance = await FortyTwoKLCoin.new();
   });
@@ -23,23 +25,25 @@ contract("FortyTwoKLCoin", (accounts) => {
   });
 
   it("should allow alice to add bob as minter", async () => {
-    const result = await instance.addMinter(bob, { from: alice });
-    console.log(result.receipt.logs[0]);
-    console.log(result.logs[0]);
-    console.log(result.logs[0].args[0]);
-    assert(result.receipt.status, true, "Failed to add minter!");
+    const result = await instance.grantRole(MINTER_ROLE, bob, { from: alice });
+    assert.equal(result.receipt.status, true, "Failed to add minter!");
   });
 
   it("should not allow bob to add himself as minter", async () => {
-    await utils.shouldThrow(instance.addMinter(bob, { from: bob }));
+    await utils.shouldThrow(
+      instance.grantRole(MINTER_ROLE, bob, { from: bob })
+    );
   });
 
-  it("should allow alice to mint 1000 42KL to herself", async () => {
-    const result = await instance.addMinter(bob, { from: alice });
-    assert(true);
+  it("should not allow bob to mint", async () => {
+    await utils.shouldThrow(instance.mint(alice, 1000, { from: bob }));
   });
 
-  it("should allow bob to mint 1000 42KL to himself after given access", async () => {
-    await utils.shouldThrow(instance.addMinter(bob, { from: bob }));
+  it("should allow alice to mint 1000 42KL Coin to herself", async () => {
+    await instance.mint(alice, 1000, { from: alice });
+    const balance = await instance.balanceOf(alice);
+    assert.equal(balance, 1000, "Balance is not equal 1000!");
   });
+
+  xit("should allow bob to mint 1000 42KL Coin to himself after given access", async () => {});
 });

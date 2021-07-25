@@ -12,13 +12,10 @@ contract FortyTwoKLCoin is ERC20, AccessControl {
 
     constructor() ERC20("42KL Coin", "42KL") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
     }
 
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
-    }
-
-    function addMinter(address newMinter) public {
-        grantRole(MINTER_ROLE, newMinter);
     }
 }

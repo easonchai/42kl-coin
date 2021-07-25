@@ -2,6 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./IFortyTwoKLCoin.sol";
 
 /// @title Marketplace for 42KL Coin
 /// @author Eason Chai
@@ -9,13 +11,18 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Marketplace is AccessControl {
   bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
   uint public conversionRate;
-  address ftklCoinAddress;
+
+  IERC20 public token;
   
   // Events
+  event SetTokenEvent(address tokenAddress);
   event SetConversionRateEvent(address updatedBy, uint conversionRate);
+  event PurchaseEvalPointsEvent(address buyer, uint evalPoints, uint amountPaid);
 
-  constructor(address _coinAddress) {
-    ftklCoinAddress = _coinAddress;
+  constructor(IERC20 _token) {
+    token = _token;
+    emit SetTokenEvent(address(_token));
+    
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(ADMIN_ROLE, msg.sender);
   }
@@ -31,6 +38,7 @@ contract Marketplace is AccessControl {
   /// @notice Purchase evaluation points
   /// @dev Converts 42KL coin to evaluation points based on conversionRate
   function purchaseEvalPoints(uint evalPoints) external {
-    
+    uint amountPaid = 0;
+    emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountPaid);
   }
 }

@@ -22,6 +22,7 @@ contract Marketplace is AccessControl {
 
   mapping(uint=>Purchase) private purchases;
   uint private randNonce = 0;
+  uint private lockedTokens = 0;
   
   // Events
   event SetTokenEvent(address tokenAddress);
@@ -61,6 +62,7 @@ contract Marketplace is AccessControl {
     uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
     Purchase memory order = Purchase(msg.sender, amountToPay);
     purchases[id] = order;
+    lockedTokens.add(amountToPay);
 
     assert((balanceBeforeTransfer.add(amountToPay)) == token.balanceOf(address(this)));
     emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay, id);
@@ -72,6 +74,7 @@ contract Marketplace is AccessControl {
   function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
     delete purchases[id];
+    lockedTokens.sub(order.amountPaid);
     emit PurchaseSuccessEvent(order.buyer, id);
   }
 
@@ -86,6 +89,7 @@ contract Marketplace is AccessControl {
 
     assert(balanceBeforeTransfer.sub(order.amountPaid) == token.balanceOf(address(this)));
     delete purchases[id];
+    lockedTokens.sub(order.amountPaid);
     emit PurchaseFailEvent(order.buyer, order.amountPaid, id);
   }
 
@@ -94,9 +98,9 @@ contract Marketplace is AccessControl {
   /// @param recipient The recipient to receive the tokens
   /// @param amount The amount to withdraw
   function withdrawTokens(address recipient, uint amount) external onlyRole(ADMIN_ROLE) {
-    // Will only withdraw the amounts not locked
+    uint withdrawableAmount = token.balanceOf(address(this)).sub(lockedTokens);
     require(hasRole(ADMIN_ROLE, recipient), "Withdrawal address must be an admin!");
-    require(token.balanceOf(address(this)) >= amount, "Insufficient balance within smart contract!");
+    require(withdrawableAmount >= amount, "Insufficient balance within smart contract!");
     token.transfer(recipient, amount);
     emit WithdrawTokensEvent(recipient, amount);
   }

@@ -1,14 +1,14 @@
-const FortyTwoKLCoin = artifacts.require("FortyTwoKLCoin");
+const FortyTwoKLToken = artifacts.require("FortyTwoKLToken");
 const utils = require("./helpers/utils");
 
-contract("FortyTwoKLCoin", (accounts) => {
+contract("FortyTwoKLToken", (accounts) => {
   let instance;
   const [alice, bob, chad] = accounts;
 
   const MINTER_ROLE = web3.utils.keccak256("MINTER_ROLE");
 
   beforeEach(async () => {
-    instance = await FortyTwoKLCoin.new();
+    instance = await FortyTwoKLToken.new();
   });
 
   it("should show the token symbol as 42KL", async () => {

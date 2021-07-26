@@ -1,11 +1,11 @@
-const FortyTwoKLCoin = artifacts.require("FortyTwoKLCoin");
+const FortyTwoKLToken = artifacts.require("FortyTwoKLToken");
 const Marketplace = artifacts.require("Marketplace");
 const { BN } = require("@openzeppelin/test-helpers");
 
 module.exports = async function (deployer, network, accounts) {
   // Deploy token
-  await deployer.deploy(FortyTwoKLCoin);
-  const token = await FortyTwoKLCoin.deployed();
+  await deployer.deploy(FortyTwoKLToken);
+  const token = await FortyTwoKLToken.deployed();
 
   // Pass token into Marketplace
   await deployer.deploy(Marketplace, token.address);

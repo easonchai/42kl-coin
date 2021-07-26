@@ -1,3 +1,4 @@
 .secret
 build/
 node_modules/
+coverage/

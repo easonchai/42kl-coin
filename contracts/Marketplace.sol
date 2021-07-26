@@ -10,11 +10,12 @@ import "./IFortyTwoKLCoin.sol";
 /// @author Eason Chai
 /// @dev This is where we can convert 42KL token to eval points, etc.
 contract Marketplace is AccessControl {
+  using SafeMath for uint;
   bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
   uint public conversionRate;
 
   IERC20 public token;
-  mapping(address=>uint[]) private purchases;
+  mapping(uint=>address) private purchases;
   uint private randNonce = 0;
   
   // Events
@@ -22,7 +23,8 @@ contract Marketplace is AccessControl {
   event SetConversionRateEvent(address updatedBy, uint conversionRate);
   event PurchaseEvalPointsEvent(address buyer, uint evalPoints, uint amountPaid, uint id);
   event WithdrawTokensEvent(address recipient, uint amount);
-  event RefundTokensEvent(address recipient, uint amount, uint id);
+  event PurchaseSuccessEvent(address buyer, uint id);
+  event PurchaseFailEvent(address recipient, uint refundAmount, uint id);
 
   constructor(IERC20 _token) {
     token = _token;
@@ -44,7 +46,7 @@ contract Marketplace is AccessControl {
   /// @dev Converts 42KL token to evaluation points based on conversionRate
   /// @param evalPoints The number of eval points to purchase
   function purchaseEvalPoints(uint evalPoints) external {
-    uint amountToPay = evalPoints * conversionRate;
+    uint amountToPay = evalPoints.mul(conversionRate);
 
     require(token.balanceOf(msg.sender) >= amountToPay, "Buyer does not have enough funds!");
 
@@ -52,17 +54,26 @@ contract Marketplace is AccessControl {
     token.transferFrom(msg.sender, address(this), amountToPay);
 
     uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
-    purchases[msg.sender].push(id);
+    purchases[id] = msg.sender;
 
-    assert((balanceBeforeTransfer + amountToPay) == token.balanceOf(address(this)));
+    assert((balanceBeforeTransfer.add(amountToPay)) == token.balanceOf(address(this)));
     emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay, id);
+  }
+
+  /// @notice Removes existing mapping
+  /// @dev This is only executed if the backend POST request succeeds
+  /// @param id The id of the purchase made earlier
+  function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
+    address buyer = purchases[id];
+    emit PurchaseSuccessEvent(buyer, id);
   }
 
   /// @notice Refund 42KL token
   /// @dev This is only executed if the backend fails or something went wrong
   /// @param id The id of the purchase made earlier
-  function refundTokens(uint id) external onlyRole(ADMIN_ROLE) {
-
+  function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
+    address recipient = purchases[id];
+    emit PurchaseFailEvent(recipient, 0, id);
   }
 
   /// @notice Withdraw 42KL token
@@ -70,6 +81,7 @@ contract Marketplace is AccessControl {
   /// @param recipient The recipient to receive the tokens
   /// @param amount The amount to withdraw
   function withdrawTokens(address recipient, uint amount) external onlyRole(ADMIN_ROLE) {
+    // Will only withdraw the amounts not locked
     require(hasRole(ADMIN_ROLE, recipient), "Withdrawal address must be an admin!");
     require(token.balanceOf(address(this)) >= amount, "Insufficient balance!");
     token.transfer(recipient, amount);

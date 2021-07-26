@@ -46,6 +46,13 @@ module.exports = {
       port: 7545, // Standard Ethereum port (default: none)
       network_id: "*", // Any network (default: none)
     },
+    coverage: {
+      host: "localhost",
+      network_id: "*", // eslint-disable-line camelcase
+      port: 8555,
+      gas: 0xfffffffffff,
+      gasPrice: 0x01,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -92,6 +99,8 @@ module.exports = {
       // }
     },
   },
+
+  plugins: ["solidity-coverage"],
 
   // Truffle DB is currently disabled by default; to enable it, change enabled: false to enabled: true
   //

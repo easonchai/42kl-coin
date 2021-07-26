@@ -61,7 +61,7 @@ contract("Marketplace", (accounts) => {
     const evalPoints = new BN(2);
     const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
     // Approve first
-    token.approve(instance.address, amountPaid, { from: alice });
+    await token.approve(instance.address, amountPaid, { from: alice });
 
     // Then purchase
     const receipt = await instance.purchaseEvalPoints(evalPoints, {
@@ -76,5 +76,67 @@ contract("Marketplace", (accounts) => {
 
   it("should not allow bob to use scam tokens", async () => {
     await utils.shouldThrow(instance.purchaseEvalPoints(2, { from: bob }));
+  });
+
+  it("should allow alice to withdraw from contract", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+    // Approve first
+    await token.approve(instance.address, amountPaid, { from: alice });
+
+    // Then purchase
+    await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+
+    // Check balance
+    const beginningBalance = new BN(1000).mul(utils.multiplier);
+    const currentBalance = (await token.balanceOf(alice)).toString(10);
+    const expectedBalance = beginningBalance.sub(amountPaid).toString(10);
+    assert.equal(currentBalance, expectedBalance, "Balance not equal!");
+
+    // Perform
+    const withdrawReceipt = await instance.withdrawTokens(alice, amountPaid, {
+      from: alice,
+    });
+
+    expectEvent(withdrawReceipt, "WithdrawTokensEvent", {
+      recipient: alice,
+      amount: amountPaid,
+    });
+
+    // Check new balance
+    const newBalance = (await token.balanceOf(alice)).toString(10);
+    assert.equal(newBalance, amount.toString(10), "Balance not equal!");
+  });
+
+  it("should not allow alice to withdraw from contract to chad", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+
+    await token.approve(instance.address, amountPaid, { from: alice });
+    await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+    utils.shouldThrow(
+      instance.withdrawTokens(chad, amountPaid, {
+        from: alice,
+      })
+    );
+  });
+
+  it("should not allow chad to withdraw from contract", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+
+    await token.approve(instance.address, amountPaid, { from: alice });
+    await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+    utils.shouldThrow(
+      instance.withdrawTokens(alice, amountPaid, {
+        from: chad,
+      })
+    );
   });
 });

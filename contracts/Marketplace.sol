@@ -39,9 +39,14 @@ contract Marketplace is AccessControl {
   /// @dev Converts 42KL coin to evaluation points based on conversionRate
   function purchaseEvalPoints(uint evalPoints) external {
     uint amountToPay = evalPoints * conversionRate;
+    uint balanceBeforeTransfer = token.balanceOf(address(this));
+
     require(token.balanceOf(msg.sender) >= amountToPay, "Buyer does not have enough funds!");
     token.transferFrom(msg.sender, address(this), amountToPay);
-    // Add assert here
+
+    assert((balanceBeforeTransfer + amountToPay) == token.balanceOf(address(this)));
     emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay);
   }
+
+  // Add refund callback if something goes wrong
 }

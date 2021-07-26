@@ -21,7 +21,13 @@ contract("Marketplace", (accounts) => {
     await token.mint(alice, amount, {
       from: alice,
     });
-    await scamToken.mint(alice, scamAmount, {
+    await scamToken.mint(bob, scamAmount, {
+      from: alice,
+    });
+
+    const conversionRate = new BN(50).mul(utils.multiplier);
+
+    await instance.setConversionRate(conversionRate, {
       from: alice,
     });
   });
@@ -49,5 +55,26 @@ contract("Marketplace", (accounts) => {
     const token = new web3.eth.Contract(FortyTwoKLCoin.abi, tokenAddress);
     const balance = await token.methods.balanceOf(alice).call();
     assert.equal(balance, amount, "Balance is not equal!");
+  });
+
+  it("should allow alice to purchase eval points", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+    // Approve first
+    token.approve(instance.address, amountPaid, { from: alice });
+
+    // Then purchase
+    const receipt = await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+    expectEvent(receipt, "PurchaseEvalPointsEvent", {
+      buyer: alice,
+      evalPoints,
+      amountPaid,
+    });
+  });
+
+  it("should not allow bob to use scam tokens", async () => {
+    await utils.shouldThrow(instance.purchaseEvalPoints(2, { from: bob }));
   });
 });

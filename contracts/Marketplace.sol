@@ -13,9 +13,14 @@ contract Marketplace is AccessControl {
   using SafeMath for uint;
   bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
   uint public conversionRate;
-
   IERC20 public token;
-  mapping(uint=>address) private purchases;
+
+  struct Purchase {
+    address buyer;
+    uint amountPaid;
+  }
+
+  mapping(uint=>Purchase) private purchases;
   uint private randNonce = 0;
   
   // Events
@@ -54,7 +59,8 @@ contract Marketplace is AccessControl {
     token.transferFrom(msg.sender, address(this), amountToPay);
 
     uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
-    purchases[id] = msg.sender;
+    Purchase memory order = Purchase(msg.sender, amountToPay);
+    purchases[id] = order;
 
     assert((balanceBeforeTransfer.add(amountToPay)) == token.balanceOf(address(this)));
     emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay, id);
@@ -64,16 +70,23 @@ contract Marketplace is AccessControl {
   /// @dev This is only executed if the backend POST request succeeds
   /// @param id The id of the purchase made earlier
   function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
-    address buyer = purchases[id];
-    emit PurchaseSuccessEvent(buyer, id);
+    Purchase memory order = purchases[id];
+    delete purchases[id];
+    emit PurchaseSuccessEvent(order.buyer, id);
   }
 
   /// @notice Refund 42KL token
   /// @dev This is only executed if the backend fails or something went wrong
   /// @param id The id of the purchase made earlier
   function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
-    address recipient = purchases[id];
-    emit PurchaseFailEvent(recipient, 0, id);
+    Purchase memory order = purchases[id];
+    uint balanceBeforeTransfer = token.balanceOf(address(this));
+    require(balanceBeforeTransfer >= order.amountPaid, "Insufficient balance within smart contract!");
+    token.transfer(order.buyer, order.amountPaid);
+
+    assert(balanceBeforeTransfer.sub(order.amountPaid) == token.balanceOf(address(this)));
+    delete purchases[id];
+    emit PurchaseFailEvent(order.buyer, order.amountPaid, id);
   }
 
   /// @notice Withdraw 42KL token
@@ -83,7 +96,7 @@ contract Marketplace is AccessControl {
   function withdrawTokens(address recipient, uint amount) external onlyRole(ADMIN_ROLE) {
     // Will only withdraw the amounts not locked
     require(hasRole(ADMIN_ROLE, recipient), "Withdrawal address must be an admin!");
-    require(token.balanceOf(address(this)) >= amount, "Insufficient balance!");
+    require(token.balanceOf(address(this)) >= amount, "Insufficient balance within smart contract!");
     token.transfer(recipient, amount);
     emit WithdrawTokensEvent(recipient, amount);
   }

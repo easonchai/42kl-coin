@@ -3,6 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IFortyTwoKLCoin.sol";
 
 /// @title Marketplace for 42KL Token
@@ -13,12 +14,15 @@ contract Marketplace is AccessControl {
   uint public conversionRate;
 
   IERC20 public token;
+  mapping(address=>uint[]) private purchases;
+  uint private randNonce = 0;
   
   // Events
   event SetTokenEvent(address tokenAddress);
   event SetConversionRateEvent(address updatedBy, uint conversionRate);
-  event PurchaseEvalPointsEvent(address buyer, uint evalPoints, uint amountPaid);
+  event PurchaseEvalPointsEvent(address buyer, uint evalPoints, uint amountPaid, uint id);
   event WithdrawTokensEvent(address recipient, uint amount);
+  event RefundTokensEvent(address recipient, uint amount, uint id);
 
   constructor(IERC20 _token) {
     token = _token;
@@ -31,7 +35,7 @@ contract Marketplace is AccessControl {
   /// @notice Set conversion rate
   /// @dev 1 evaluation point = conversionRate [42KL token]
   /// @param _conversionRate The conversion rate used to buy 1 eval point
-  function setConversionRate(uint _conversionRate) public onlyRole(ADMIN_ROLE) {
+  function setConversionRate(uint _conversionRate) external onlyRole(ADMIN_ROLE) {
     conversionRate = _conversionRate;
     emit SetConversionRateEvent(msg.sender, _conversionRate);
   }
@@ -41,16 +45,25 @@ contract Marketplace is AccessControl {
   /// @param evalPoints The number of eval points to purchase
   function purchaseEvalPoints(uint evalPoints) external {
     uint amountToPay = evalPoints * conversionRate;
-    uint balanceBeforeTransfer = token.balanceOf(address(this));
 
     require(token.balanceOf(msg.sender) >= amountToPay, "Buyer does not have enough funds!");
+
+    uint balanceBeforeTransfer = token.balanceOf(address(this));
     token.transferFrom(msg.sender, address(this), amountToPay);
 
+    uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
+    purchases[msg.sender].push(id);
+
     assert((balanceBeforeTransfer + amountToPay) == token.balanceOf(address(this)));
-    emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay);
+    emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay, id);
   }
 
-  // Add refund callback if something goes wrong
+  /// @notice Refund 42KL token
+  /// @dev This is only executed if the backend fails or something went wrong
+  /// @param id The id of the purchase made earlier
+  function refundTokens(uint id) external onlyRole(ADMIN_ROLE) {
+
+  }
 
   /// @notice Withdraw 42KL token
   /// @dev Withdraws to only addresses with ADMIN_ROLE

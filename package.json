@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "start": "yarn --cwd backend/ start",
-    "dev": "yarn --cwd backend/ start:dev",
+    "dev": "yarn --cwd backend/ dev",
     "test": "cd smart_contracts/ && truffle test",
     "coverage": "cd smart_contracts/ && yarn coverage"
   }

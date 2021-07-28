@@ -1,6 +1,7 @@
 const BN = require("bn.js");
 const axios = require("./utils/axios");
 const { initialize } = require("./utils/common");
+const MAX_RETRIES = 5;
 
 function init() {
   console.log("📡 Initializing backend...");
@@ -41,6 +42,12 @@ async function giveEvalPoints(event: any) {
   //     amount,
   //   }
   // });
+
+  // If succeed, call purchaseSuccess
+
+  // If fail, retry 5 times, otherwise call purchaseFail
 }
+
+async function purchaseFail() {}
 
 init();

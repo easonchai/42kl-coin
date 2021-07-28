@@ -1,15 +1,14 @@
 {
   "name": "42kl-coin",
   "version": "0.0.1",
+  "description": "A smart contract implementation to enable secure & trustless purchasing of evaluation points for the 42 Network",
+  "main": "index.js",
+  "repository": "git@github.com:easonchai/42kl-coin.git",
   "author": "Eason Chai <echai2905@gmail.com>",
   "license": "MIT",
+  "private": true,
   "scripts": {
-    "migrate:dev": "truffle migrate --network development",
-    "coverage": "truffle run coverage --solcoverjs ./.solcover.js --network coverage"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.2.0",
-    "@openzeppelin/test-helpers": "^0.5.12",
-    "solidity-coverage": "^0.7.16"
+    "start:backend": "echo start backend",
+    "test": "cd smart_contracts/ && truffle test"
   }
 }

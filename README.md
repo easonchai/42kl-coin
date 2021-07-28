@@ -1,28 +1,26 @@
 # 42KL Coin
 
-_Actually a token, but coin sounds cooler anyways_ 😎
+_A smart contract built on Ethereum for trustless & secure purchasing of evaluation points for the 42 Network_
 
 ## 🚪 Introduction
 
-This is just a fun little project to see what we can do with Ethereum Smart Contracts.
+This project is split into two parts:
 
-The idea is to allow people to purchase evaluation points (eval points) using the 42KL token.
+1. The smart contracts `[smart_contracts/]`
+1. The backend `[backend/]`
 
-42KL tokens can be earned by participating in events/activities organized by Bocals.
+### 📝 Smart Contracts
 
-## 💡 Process
+The explanation for smart contracts can be found within the `smart_contracts` folder.
 
-There are two smart contracts in this project:
+Essentially, we have a 42KL token which can be used in a marketplace to purchase evaluation points.
 
-1. 42KL Token
-2. Marketplace
+### 📡 Backend
 
-### 💵 42KL Token
+The backend listend to events emitted by the smart contract and executes the appropriate request.
 
-The contract is just a basic ERC20 implementation, but implements access control. Tokens can only be minted by addresses with the `MINTER_ROLE`.
+### Notes
 
-### 🛍 Marketplace
+Some notes to keep in mind:
 
-The marketplace currently only allows evaluation points to be purchased (not really marketplace like). It also implements access control, so only addresses with `ADMIN_ROLE` can execute 5/6 of the functions, which are withdraw, setting state, and purchase success/fail.
-
-The `purchaseEvalPoints` function is open to all
+1. This is far from a secure/proper implementation of smart contracts on Ethereum. Executing a POST request is non-deterministic, hence it should always be avoided. However, this project does not need to worry about this issue as it is not part of its requirements.

@@ -20,12 +20,10 @@ const marketplaceAbi = JSON.parse(
 
 function initialize() {
   if (PRIVATE_KEY == null) {
-    console.error("Private key is empty! Application will quit now.");
-    return null;
+    console.error("⚠ Private key is empty! Application will quit now.");
+    process.exit();
   }
   const web3 = new Web3("ws://127.0.0.1:7545");
-  console.log("Connection established. Backend initialized!");
-
   const marketplace = new web3.eth.Contract(marketplaceAbi, CONTRACT_ADDRESS);
   const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
 

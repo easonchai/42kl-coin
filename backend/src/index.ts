@@ -16,18 +16,17 @@ function init() {
     }
     await giveEvalPoints(event);
   });
-  // console.log(web3);
 
   process.on("SIGINT", () => {
-    console.log("Terminating gracefully...");
+    console.log("🛑 Terminating gracefully...");
     web3.currentProvider.disconnect();
     process.exit();
   });
 }
 
 async function giveEvalPoints(event: any) {
-  console.log("Purchase received!");
-  console.log(event.returnValues.buyer);
+  console.log("🧾 Purchase received! Processing...");
+  const { buyer, evalPoints, amountPaid, id } = event.returnValues;
 }
 
 init();

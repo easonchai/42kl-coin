@@ -6,9 +6,18 @@
   "author": "Eason Chai",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "prestart": "tsc index.ts",
+    "predev": "tsc index.ts",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
   "dependencies": {
     "axios": "^0.21.1",
     "bn.js": "^5.2.0",
     "web3": "^1.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
   }
 }

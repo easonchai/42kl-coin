@@ -7,10 +7,10 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "prestart": "tsc index.ts",
-    "predev": "tsc index.ts",
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "prestart": "tsc --project tsconfig.json",
+    "predev": "tsc --project tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "nodemon dist/index.js"
   },
   "dependencies": {
     "axios": "^0.21.1",

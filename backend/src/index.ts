@@ -1,6 +1,7 @@
-const BN = require("bn.js");
-const { axios } = require("./utils/axios");
-const { initialize } = require("./utils/common");
+import BN from "bn.js";
+import { Account, HttpProvider } from "web3-core";
+import { axios } from "./utils/axios";
+import { initialize } from "./utils/common";
 const MAX_RETRIES = 5;
 
 function init() {
@@ -15,17 +16,17 @@ function init() {
       console.error("⚠ Error on event", err);
       return;
     }
-    await processPurchase(event);
+    await processPurchase(account, marketplace, event);
   });
 
   process.on("SIGINT", () => {
     console.log("🛑 Terminating gracefully...");
-    web3.currentProvider.disconnect();
+    (web3.currentProvider as HttpProvider).disconnect();
     process.exit();
   });
 }
 
-async function processPurchase(event: any) {
+async function processPurchase(account: Account, marketplace: any, event: any) {
   console.log("🧾 Purchase received! Processing...");
 
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
@@ -47,12 +48,25 @@ async function processPurchase(event: any) {
   //   }
   // });
 
-  let tries = 1;
-  while (tries <= MAX_RETRIES) {
-    console.info(`Attempt #${tries}`);
+  makeRequest(account, marketplace, id, amount, 1);
+}
 
-    console.log(typeof id);
+async function makeRequest(
+  account: Account,
+  marketplace: any,
+  id: any,
+  amount: string,
+  tries: number
+) {
+  if (tries > MAX_RETRIES) {
+    // If fail after 5 times, call purchaseFail
+    await purchaseFail(account, marketplace, id);
+    return;
+  }
 
+  console.info(`Attempt #${tries}`);
+
+  setTimeout(async () => {
     try {
       const response = await axios.post(
         "http://ptsv2.com/t/mf71r-1627483833/post",
@@ -67,30 +81,46 @@ async function processPurchase(event: any) {
 
       // If succeed, call purchaseSuccess
       if (response.status == 200) {
-        purchaseSuccess(id);
+        purchaseSuccess(account, marketplace, id);
         return;
       } else {
-        console.log("⚠ POST request failed.");
+        console.log("⚠ POST request failed. Reattempting...");
         tries++;
       }
-    } catch (e) {
-      console.log("Error with POST request: ", e);
+    } catch (error) {
+      console.log("Error with POST request: ", error.response.status);
       tries++;
     }
-  }
-
-  // If fail after 5 times, call purchaseFail
-  purchaseFail(id);
+    makeRequest(account, marketplace, id, amount, tries++);
+  }, 1000);
 }
 
-async function purchaseSuccess(id: string) {
+async function purchaseSuccess(account: Account, marketplace: any, id: string) {
   console.log("✅ Purchase Success!");
-  console.log(id);
+  const receipt = await marketplace.methods
+    .purchaseSuccess(id)
+    .send({ from: account.address });
+  if (receipt.status) {
+    console.log("💵 Purchase processed.");
+  } else {
+    console.log(
+      "❗ Purchase failed. Notifying admin for manual acknowledgement"
+    );
+    // Notify admin here
+  }
 }
 
-async function purchaseFail(id: string) {
+async function purchaseFail(account: Account, marketplace: any, id: string) {
   console.log("❌ Purchase Failed! Refunding...");
-  console.log(id);
+  const receipt = await marketplace.methods
+    .purchaseFail(id)
+    .send({ from: account.address });
+  if (receipt.status) {
+    console.log("💵 Refund complete.");
+  } else {
+    console.log("❗ Refund failed. Notifying admin for manual refund");
+    // Notify admin here
+  }
 }
 
 init();

@@ -1,5 +1,5 @@
 const FortyTwoKLToken = artifacts.require("FortyTwoKLToken");
-const utils = require("./helpers/utils");
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
 contract("FortyTwoKLToken", (accounts) => {
   let instance;
@@ -30,14 +30,14 @@ contract("FortyTwoKLToken", (accounts) => {
   });
 
   it("should not allow bob to add himself as minter", async () => {
-    await utils.shouldThrow(
+    await expectRevert.unspecified(
       instance.grantRole(MINTER_ROLE, bob, { from: bob })
     );
   });
 
   it("should not allow bob to mint", async () => {
-    await utils.shouldThrow(instance.mint(alice, 1000, { from: bob }));
-    await utils.shouldThrow(instance.mint(bob, 1000, { from: bob }));
+    await expectRevert.unspecified(instance.mint(alice, 1000, { from: bob }));
+    await expectRevert.unspecified(instance.mint(bob, 1000, { from: bob }));
   });
 
   it("should allow alice to mint 1000 42KL Coin to herself", async () => {

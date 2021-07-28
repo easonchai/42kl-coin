@@ -91,7 +91,7 @@ contract Marketplace is AccessControl {
   }
 
   /// @notice Refund 42KL token
-  /// @dev This is only executed if the backend fails or something went wrong
+  /// @dev This is only executed if the backend fails or something went wrong. Also deletes the mapping
   /// @param id The id of the purchase made earlier
   function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
@@ -114,7 +114,7 @@ contract Marketplace is AccessControl {
   function withdrawTokens(address recipient, uint amount) external onlyRole(ADMIN_ROLE) {
     uint withdrawableAmount = token.balanceOf(address(this)).sub(lockedTokens);
     require(hasRole(ADMIN_ROLE, recipient), "MARKETPLACE: Withdrawal address must be an admin!");
-    require(withdrawableAmount >= amount, "MARKETPLACE: Insufficient balance within smart contract!");
+    require(withdrawableAmount >= amount, "MARKETPLACE: Withdraw amount exceeds allowed balance!");
     token.transfer(recipient, amount);
     emit WithdrawTokensEvent(recipient, amount);
   }

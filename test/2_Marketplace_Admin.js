@@ -1,6 +1,6 @@
 const FortyTwoKLToken = artifacts.require("FortyTwoKLToken");
 const Marketplace = artifacts.require("Marketplace");
-const { BN, expectEvent } = require("@openzeppelin/test-helpers");
+const { BN, expectEvent, expectRevert } = require("@openzeppelin/test-helpers");
 const utils = require("./helpers/utils");
 
 contract("Marketplace", (accounts) => {
@@ -71,7 +71,7 @@ contract("Marketplace", (accounts) => {
     const evalPoints = new BN(2);
     const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
     await scamToken.approve(instance.address, amountPaid, { from: alice });
-    await utils.shouldThrow(
+    await expectRevert.unspecified(
       instance.purchaseEvalPoints(evalPoints, { from: bob })
     );
   });

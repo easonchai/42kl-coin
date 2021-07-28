@@ -1,12 +1,12 @@
 const FortyTwoKLToken = artifacts.require("FortyTwoKLToken");
 const Marketplace = artifacts.require("Marketplace");
-const { BN, expectEvent } = require("@openzeppelin/test-helpers");
+const { BN, expectEvent, expectRevert } = require("@openzeppelin/test-helpers");
 const utils = require("./helpers/utils");
 
 contract("Marketplace", (accounts) => {
   let instance;
   let token;
-  const [alice, bob, chad] = accounts;
+  const [alice, bob] = accounts;
 
   const amount = new BN(1000).mul(utils.multiplier);
 
@@ -43,11 +43,15 @@ contract("Marketplace", (accounts) => {
   });
 
   it("should not allow bob to purchase as insufficient balance", async () => {
-    await utils.shouldThrow(instance.purchaseEvalPoints(2, { from: bob }));
+    await expectRevert.unspecified(
+      instance.purchaseEvalPoints(2, { from: bob })
+    );
   });
 
   it("should fail to purchase zero eval points", async () => {
-    await utils.shouldThrow(instance.purchaseEvalPoints(0, { from: alice }));
+    await expectRevert.unspecified(
+      instance.purchaseEvalPoints(0, { from: alice })
+    );
   });
 
   it("should execute purchase success", async () => {
@@ -69,7 +73,7 @@ contract("Marketplace", (accounts) => {
     });
   });
 
-  xit("should execute purchase fail", async () => {
+  it("should execute purchase fail", async () => {
     const evalPoints = new BN(2);
     const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
     // Approve first
@@ -81,7 +85,7 @@ contract("Marketplace", (accounts) => {
     });
 
     const purchaseId = result.logs[0].args.id;
-    const receipt = await instance.purchaseSuccess(purchaseId, { from: alice });
+    const receipt = await instance.purchaseFail(purchaseId, { from: alice });
     expectEvent(receipt, "PurchaseFailEvent", {
       buyer: alice,
       refundAmount: amountPaid,
@@ -89,7 +93,35 @@ contract("Marketplace", (accounts) => {
     });
   });
 
-  xit("should realize that purchase doesnt exist", async () => {});
+  it("should not allow anyone else to execute purchase fail", async () => {
+    await expectRevert.unspecified(instance.purchaseFail(0, { from: bob }));
+  });
 
-  xit("should not allow anyone else to execute purchase fail", async () => {});
+  it("should realize that purchase doesnt exist", async () => {
+    await expectRevert.unspecified(
+      instance.purchaseSuccess(0, { from: alice })
+    );
+    await expectRevert.unspecified(instance.purchaseFail(0, { from: alice }));
+  });
+
+  it("should not be able to execute purchase success/fail twice for same id", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+    // Approve first
+    await token.approve(instance.address, amountPaid, { from: alice });
+
+    // Then purchase
+    const result = await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+
+    let purchaseId = result.logs[0].args.id;
+    await instance.purchaseSuccess(purchaseId, { from: alice });
+    await expectRevert.unspecified(
+      instance.purchaseSuccess(purchaseId, { from: alice })
+    );
+    await expectRevert.unspecified(
+      instance.purchaseFail(purchaseId, { from: alice })
+    );
+  });
 });

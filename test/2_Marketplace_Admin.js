@@ -58,6 +58,10 @@ contract("Marketplace", (accounts) => {
     });
     const balance = await newToken.balanceOf(alice);
     assert.equal(balance, 0, "Balance is not zero!");
+
+    await expectRevert.unspecified(
+      instance.purchaseEvalPoints(1, { from: alice })
+    );
   });
 
   it("should show alice's balance via Marketplace", async () => {

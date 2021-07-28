@@ -41,14 +41,14 @@ contract Marketplace is AccessControl {
 
   /// @notice Set token instance
   /// @dev In the event the token has to be updated
-  /// @param _token The deployed token instance
+  /// @param _token The deployed token instance address
   function setToken(IERC20 _token) external onlyRole(ADMIN_ROLE) {
     token = _token;
     emit SetTokenEvent(address(_token));
   }
 
-  /// @notice Set conversion rate
-  /// @dev 1 evaluation point = conversionRate [42KL token]
+  /// @notice Set conversion rate (price)
+  /// @dev 1 evaluation point = conversionRate
   /// @param _conversionRate The conversion rate used to buy 1 eval point
   function setConversionRate(uint _conversionRate) external onlyRole(ADMIN_ROLE) {
     require(_conversionRate > 0, "MARKETPLACE: Conversion rate cannot be zero!");
@@ -68,6 +68,7 @@ contract Marketplace is AccessControl {
     uint balanceBeforeTransfer = token.balanceOf(address(this));
     token.transferFrom(msg.sender, address(this), amountToPay);
 
+    // Generate a random ID
     uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
     Purchase memory order = Purchase(msg.sender, amountToPay);
     purchases[id] = order;
@@ -84,6 +85,7 @@ contract Marketplace is AccessControl {
   function purchaseSuccess(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
 
+    // Since its impossible, we can assume this is the default, hence it doesn't exist
     require(order.amountPaid > 0, "MARKETPLACE: This order doesn't exist");
     delete purchases[id];
     lockedTokens = lockedTokens.sub(order.amountPaid);
@@ -96,13 +98,15 @@ contract Marketplace is AccessControl {
   function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
 
+    // Delete it ASAP for security
+    delete purchases[id];
+
     require(order.amountPaid > 0, "MARKETPLACE: This order doesn't exist");
     uint balanceBeforeTransfer = token.balanceOf(address(this));
     require(balanceBeforeTransfer >= order.amountPaid, "MARKETPLACE: Insufficient balance within smart contract!");
     token.transfer(order.buyer, order.amountPaid);
 
     assert(balanceBeforeTransfer.sub(order.amountPaid) == token.balanceOf(address(this)));
-    delete purchases[id];
     lockedTokens = lockedTokens.sub(order.amountPaid);
     emit PurchaseFailEvent(order.buyer, order.amountPaid, id);
   }

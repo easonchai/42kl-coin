@@ -32,52 +32,6 @@ contract("Marketplace", (accounts) => {
     });
   });
 
-  it("should show alice as ADMIN_ROLE", async () => {
-    const result = await instance.hasRole(ADMIN_ROLE, alice);
-    assert.equal(result, true, "Not ADMIN_ROLE!");
-  });
-
-  it("should set conversion rate at 100 42KL Coin", async () => {
-    const conversionRate = new BN(100).mul(utils.multiplier);
-
-    const receipt = await instance.setConversionRate(conversionRate, {
-      from: alice,
-    });
-
-    expectEvent(receipt, "SetConversionRateEvent", {
-      updatedBy: alice,
-      conversionRate: conversionRate.toString(10),
-    });
-  });
-
-  it("should show alice's balance via Marketplace", async () => {
-    const tokenAddress = await instance.token();
-    const token = new web3.eth.Contract(FortyTwoKLToken.abi, tokenAddress);
-    const balance = await token.methods.balanceOf(alice).call();
-    assert.equal(balance, amount, "Balance is not equal!");
-  });
-
-  it("should allow alice to purchase eval points", async () => {
-    const evalPoints = new BN(2);
-    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
-    // Approve first
-    await token.approve(instance.address, amountPaid, { from: alice });
-
-    // Then purchase
-    const receipt = await instance.purchaseEvalPoints(evalPoints, {
-      from: alice,
-    });
-    expectEvent(receipt, "PurchaseEvalPointsEvent", {
-      buyer: alice,
-      evalPoints,
-      amountPaid,
-    });
-  });
-
-  it("should not allow bob to use scam tokens", async () => {
-    await utils.shouldThrow(instance.purchaseEvalPoints(2, { from: bob }));
-  });
-
   it("should allow alice to withdraw from contract", async () => {
     const evalPoints = new BN(2);
     const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));

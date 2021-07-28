@@ -50,6 +50,16 @@ contract("Marketplace", (accounts) => {
     });
   });
 
+  it("should allow alice to set token instance", async () => {
+    const newToken = await FortyTwoKLToken.new();
+    const receipt = await instance.setToken(newToken.address);
+    expectEvent(receipt, "SetTokenEvent", {
+      tokenAddress: newToken.address,
+    });
+    const balance = await newToken.balanceOf(alice);
+    assert.equal(balance, 0, "Balance is not zero!");
+  });
+
   it("should show alice's balance via Marketplace", async () => {
     const tokenAddress = await instance.token();
     const token = new web3.eth.Contract(FortyTwoKLToken.abi, tokenAddress);

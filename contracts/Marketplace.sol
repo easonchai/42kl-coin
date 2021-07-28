@@ -39,6 +39,14 @@ contract Marketplace is AccessControl {
     _setupRole(ADMIN_ROLE, msg.sender);
   }
 
+  /// @notice Set token instance
+  /// @dev In the event the token has to be updated
+  /// @param _token The deployed token instance
+  function setToken(IERC20 _token) external onlyRole(ADMIN_ROLE) {
+    token = _token;
+    emit SetTokenEvent(address(_token));
+  }
+
   /// @notice Set conversion rate
   /// @dev 1 evaluation point = conversionRate [42KL token]
   /// @param _conversionRate The conversion rate used to buy 1 eval point

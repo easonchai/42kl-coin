@@ -118,8 +118,4 @@ contract Marketplace is AccessControl {
     token.transfer(recipient, amount);
     emit WithdrawTokensEvent(recipient, amount);
   }
-
-  // Deposit eth
-
-  // Withdraw eth
 }

@@ -51,6 +51,7 @@ contract Marketplace is AccessControl {
   /// @dev 1 evaluation point = conversionRate [42KL token]
   /// @param _conversionRate The conversion rate used to buy 1 eval point
   function setConversionRate(uint _conversionRate) external onlyRole(ADMIN_ROLE) {
+    require(_conversionRate > 0, "MARKETPLACE: Conversion rate cannot be zero!");
     conversionRate = _conversionRate;
     emit SetConversionRateEvent(msg.sender, _conversionRate);
   }
@@ -59,10 +60,10 @@ contract Marketplace is AccessControl {
   /// @dev Converts 42KL token to evaluation points based on conversionRate
   /// @param evalPoints The number of eval points to purchase
   function purchaseEvalPoints(uint evalPoints) external {
-    require(evalPoints > 0, "You must purchase at least one eval point.");
+    require(evalPoints > 0, "MARKETPLACE: You must purchase at least one eval point!");
     uint amountToPay = evalPoints.mul(conversionRate);
 
-    require(token.balanceOf(msg.sender) >= amountToPay, "Buyer does not have enough funds!");
+    require(token.balanceOf(msg.sender) >= amountToPay, "MARKETPLACE: Buyer does not have enough funds!");
 
     uint balanceBeforeTransfer = token.balanceOf(address(this));
     token.transferFrom(msg.sender, address(this), amountToPay);
@@ -83,7 +84,7 @@ contract Marketplace is AccessControl {
   function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
 
-    require(order.amountPaid > 0, "This order doesn't exist");
+    require(order.amountPaid > 0, "MARKETPLACE: This order doesn't exist");
     delete purchases[id];
     lockedTokens.sub(order.amountPaid);
     emit PurchaseSuccessEvent(order.buyer, id);
@@ -95,9 +96,9 @@ contract Marketplace is AccessControl {
   function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
 
-    require(order.amountPaid > 0, "This order doesn't exist");
+    require(order.amountPaid > 0, "MARKETPLACE: This order doesn't exist");
     uint balanceBeforeTransfer = token.balanceOf(address(this));
-    require(balanceBeforeTransfer >= order.amountPaid, "Insufficient balance within smart contract!");
+    require(balanceBeforeTransfer >= order.amountPaid, "MARKETPLACE: Insufficient balance within smart contract!");
     token.transfer(order.buyer, order.amountPaid);
 
     assert(balanceBeforeTransfer.sub(order.amountPaid) == token.balanceOf(address(this)));
@@ -112,8 +113,8 @@ contract Marketplace is AccessControl {
   /// @param amount The amount to withdraw
   function withdrawTokens(address recipient, uint amount) external onlyRole(ADMIN_ROLE) {
     uint withdrawableAmount = token.balanceOf(address(this)).sub(lockedTokens);
-    require(hasRole(ADMIN_ROLE, recipient), "Withdrawal address must be an admin!");
-    require(withdrawableAmount >= amount, "Insufficient balance within smart contract!");
+    require(hasRole(ADMIN_ROLE, recipient), "MARKETPLACE: Withdrawal address must be an admin!");
+    require(withdrawableAmount >= amount, "MARKETPLACE: Insufficient balance within smart contract!");
     token.transfer(recipient, amount);
     emit WithdrawTokensEvent(recipient, amount);
   }

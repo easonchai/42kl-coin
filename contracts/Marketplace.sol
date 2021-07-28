@@ -59,6 +59,7 @@ contract Marketplace is AccessControl {
   /// @dev Converts 42KL token to evaluation points based on conversionRate
   /// @param evalPoints The number of eval points to purchase
   function purchaseEvalPoints(uint evalPoints) external {
+    require(evalPoints > 0, "You must purchase at least one eval point.");
     uint amountToPay = evalPoints.mul(conversionRate);
 
     require(token.balanceOf(msg.sender) >= amountToPay, "Buyer does not have enough funds!");
@@ -71,6 +72,7 @@ contract Marketplace is AccessControl {
     purchases[id] = order;
     lockedTokens.add(amountToPay);
 
+    assert(amountToPay > 0);
     assert((balanceBeforeTransfer.add(amountToPay)) == token.balanceOf(address(this)));
     emit PurchaseEvalPointsEvent(msg.sender, evalPoints, amountToPay, id);
   }
@@ -80,6 +82,8 @@ contract Marketplace is AccessControl {
   /// @param id The id of the purchase made earlier
   function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
+
+    require(order.amountPaid > 0, "This order doesn't exist");
     delete purchases[id];
     lockedTokens.sub(order.amountPaid);
     emit PurchaseSuccessEvent(order.buyer, id);
@@ -90,6 +94,8 @@ contract Marketplace is AccessControl {
   /// @param id The id of the purchase made earlier
   function purchaseFail(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
+
+    require(order.amountPaid > 0, "This order doesn't exist");
     uint balanceBeforeTransfer = token.balanceOf(address(this));
     require(balanceBeforeTransfer >= order.amountPaid, "Insufficient balance within smart contract!");
     token.transfer(order.buyer, order.amountPaid);

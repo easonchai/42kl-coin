@@ -45,4 +45,16 @@ contract("Marketplace", (accounts) => {
   it("should not allow bob to purchase as insufficient balance", async () => {
     await utils.shouldThrow(instance.purchaseEvalPoints(2, { from: bob }));
   });
+
+  it("should fail to purchase zero eval points", async () => {
+    await utils.shouldThrow(instance.purchaseEvalPoints(0, { from: alice }));
+  });
+
+  xit("should execute purchase success", async () => {});
+
+  xit("should execute purchase fail", async () => {});
+
+  xit("should realize that purchase doesnt exist", async () => {});
+
+  xit("should execute purchase fail", async () => {});
 });

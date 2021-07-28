@@ -1,5 +1,5 @@
 const BN = require("bn.js");
-const axios = require("axios");
+const axios = require("./utils/axios");
 const { initialize } = require("./utils/common");
 
 function init() {
@@ -27,6 +27,20 @@ function init() {
 async function giveEvalPoints(event: any) {
   console.log("🧾 Purchase received! Processing...");
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
+  // Map from buyer address to login?
+  // Add new login id parameter in smart contract
+  const url = `${buyer}/correction_points/add`;
+  const amount = evalPoints.toString(10);
+  console.log(url);
+  console.log(amount);
+
+  // Make POST request
+  // axios.post(url, null, {
+  //   params: {
+  //     reason: "Earned it",
+  //     amount,
+  //   }
+  // });
 }
 
 init();

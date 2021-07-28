@@ -3,12 +3,15 @@ export {};
 // Retrieve environment variables
 require("dotenv").config();
 
-const axios = require("axios");
+const Axios = require("axios");
 const BASE_API_URL =
   process.env.BASE_API_URL || "https://api.intra.42.fr/v2/users/";
-const BEARER_TOKEN = process.env.BASE_API_URL || "testing";
+const BEARER_TOKEN = process.env.BEARER_TOKEN || "testing";
 
-axios.defaults.baseURL = BASE_API_URL;
-axios.defaults.headers.common = { Authorization: `Bearer ${BEARER_TOKEN}` };
+const instance = Axios.create({
+  baseURL: BASE_API_URL,
+  timeout: 10000,
+  headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+});
 
-export default axios;
+export const axios = instance;

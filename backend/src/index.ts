@@ -1,5 +1,5 @@
 const BN = require("bn.js");
-const axios = require("./utils/axios");
+const { axios } = require("./utils/axios");
 const { initialize } = require("./utils/common");
 const MAX_RETRIES = 5;
 
@@ -15,7 +15,7 @@ function init() {
       console.error("⚠ Error on event", err);
       return;
     }
-    await giveEvalPoints(event);
+    await processPurchase(event);
   });
 
   process.on("SIGINT", () => {
@@ -25,15 +25,19 @@ function init() {
   });
 }
 
-async function giveEvalPoints(event: any) {
+async function processPurchase(event: any) {
   console.log("🧾 Purchase received! Processing...");
+
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
-  // Map from buyer address to login?
-  // Add new login id parameter in smart contract
-  const url = `${buyer}/correction_points/add`;
+  // Idea 1: Map from buyer address to login ID using a json or db
+  const login = "echai"; //getBuyerLoginId()
+
+  // Idea 2: Add new login id parameter in smart contract
+  // Get it here lol
+
   const amount = evalPoints.toString(10);
+  const url = `${login}/correction_points/add`;
   console.log(url);
-  console.log(amount);
 
   // Make POST request
   // axios.post(url, null, {
@@ -43,11 +47,50 @@ async function giveEvalPoints(event: any) {
   //   }
   // });
 
-  // If succeed, call purchaseSuccess
+  let tries = 1;
+  while (tries <= MAX_RETRIES) {
+    console.info(`Attempt #${tries}`);
 
-  // If fail, retry 5 times, otherwise call purchaseFail
+    console.log(typeof id);
+
+    try {
+      const response = await axios.post(
+        "http://ptsv2.com/t/mf71r-1627483833/post",
+        null,
+        {
+          params: {
+            reason: "Earned it",
+            amount,
+          },
+        }
+      );
+
+      // If succeed, call purchaseSuccess
+      if (response.status == 200) {
+        purchaseSuccess(id);
+        return;
+      } else {
+        console.log("⚠ POST request failed.");
+        tries++;
+      }
+    } catch (e) {
+      console.log("Error with POST request: ", e);
+      tries++;
+    }
+  }
+
+  // If fail after 5 times, call purchaseFail
+  purchaseFail(id);
 }
 
-async function purchaseFail() {}
+async function purchaseSuccess(id: string) {
+  console.log("✅ Purchase Success!");
+  console.log(id);
+}
+
+async function purchaseFail(id: string) {
+  console.log("❌ Purchase Failed! Refunding...");
+  console.log(id);
+}
 
 init();

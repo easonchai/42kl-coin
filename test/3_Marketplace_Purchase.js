@@ -50,11 +50,46 @@ contract("Marketplace", (accounts) => {
     await utils.shouldThrow(instance.purchaseEvalPoints(0, { from: alice }));
   });
 
-  xit("should execute purchase success", async () => {});
+  it("should execute purchase success", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+    // Approve first
+    await token.approve(instance.address, amountPaid, { from: alice });
 
-  xit("should execute purchase fail", async () => {});
+    // Then purchase
+    const result = await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+
+    const purchaseId = result.logs[0].args.id;
+    const receipt = await instance.purchaseSuccess(purchaseId, { from: alice });
+    expectEvent(receipt, "PurchaseSuccessEvent", {
+      buyer: alice,
+      id: purchaseId,
+    });
+  });
+
+  xit("should execute purchase fail", async () => {
+    const evalPoints = new BN(2);
+    const amountPaid = evalPoints.mul(new BN(50).mul(utils.multiplier));
+    // Approve first
+    await token.approve(instance.address, amountPaid, { from: alice });
+
+    // Then purchase
+    const result = await instance.purchaseEvalPoints(evalPoints, {
+      from: alice,
+    });
+
+    const purchaseId = result.logs[0].args.id;
+    const receipt = await instance.purchaseSuccess(purchaseId, { from: alice });
+    expectEvent(receipt, "PurchaseFailEvent", {
+      buyer: alice,
+      refundAmount: amountPaid,
+      id: purchaseId,
+    });
+  });
 
   xit("should realize that purchase doesnt exist", async () => {});
 
-  xit("should execute purchase fail", async () => {});
+  xit("should not allow anyone else to execute purchase fail", async () => {});
 });

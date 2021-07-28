@@ -29,7 +29,7 @@ contract Marketplace is AccessControl {
   event PurchaseEvalPointsEvent(address buyer, uint evalPoints, uint amountPaid, uint id);
   event WithdrawTokensEvent(address recipient, uint amount);
   event PurchaseSuccessEvent(address buyer, uint id);
-  event PurchaseFailEvent(address recipient, uint refundAmount, uint id);
+  event PurchaseFailEvent(address buyer, uint refundAmount, uint id);
 
   constructor(IERC20 _token) {
     token = _token;
@@ -71,7 +71,7 @@ contract Marketplace is AccessControl {
     uint id = uint(keccak256(abi.encodePacked(block.timestamp, randNonce, msg.sender, evalPoints, amountToPay)));
     Purchase memory order = Purchase(msg.sender, amountToPay);
     purchases[id] = order;
-    lockedTokens.add(amountToPay);
+    lockedTokens = lockedTokens.add(amountToPay);
 
     assert(amountToPay > 0);
     assert((balanceBeforeTransfer.add(amountToPay)) == token.balanceOf(address(this)));
@@ -81,12 +81,12 @@ contract Marketplace is AccessControl {
   /// @notice Removes existing mapping
   /// @dev This is only executed if the backend POST request succeeds
   /// @param id The id of the purchase made earlier
-  function purchaseSuccessful(uint id) external onlyRole(ADMIN_ROLE) {
+  function purchaseSuccess(uint id) external onlyRole(ADMIN_ROLE) {
     Purchase memory order = purchases[id];
 
     require(order.amountPaid > 0, "MARKETPLACE: This order doesn't exist");
     delete purchases[id];
-    lockedTokens.sub(order.amountPaid);
+    lockedTokens = lockedTokens.sub(order.amountPaid);
     emit PurchaseSuccessEvent(order.buyer, id);
   }
 
@@ -103,7 +103,7 @@ contract Marketplace is AccessControl {
 
     assert(balanceBeforeTransfer.sub(order.amountPaid) == token.balanceOf(address(this)));
     delete purchases[id];
-    lockedTokens.sub(order.amountPaid);
+    lockedTokens = lockedTokens.sub(order.amountPaid);
     emit PurchaseFailEvent(order.buyer, order.amountPaid, id);
   }
 

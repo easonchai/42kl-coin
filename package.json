@@ -9,6 +9,7 @@
   "private": true,
   "scripts": {
     "start:backend": "echo start backend",
-    "test": "cd smart_contracts/ && truffle test"
+    "test": "cd smart_contracts/ && truffle test",
+    "coverage": "cd smart_contracts/ && yarn coverage"
   }
 }

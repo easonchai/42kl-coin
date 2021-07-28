@@ -12,5 +12,8 @@
     "dev": "yarn --cwd backend/ dev",
     "test": "cd smart_contracts/ && truffle test",
     "coverage": "cd smart_contracts/ && yarn coverage"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0"
   }
 }

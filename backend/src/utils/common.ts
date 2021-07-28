@@ -23,7 +23,7 @@ function initialize() {
     console.error("Private key is empty! Application will quit now.");
     return null;
   }
-  const web3 = new Web3("http://127.0.0.1:7545");
+  const web3 = new Web3("ws://127.0.0.1:7545");
   console.log("Connection established. Backend initialized!");
 
   const marketplace = new web3.eth.Contract(marketplaceAbi, CONTRACT_ADDRESS);

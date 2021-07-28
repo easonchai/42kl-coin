@@ -9,7 +9,7 @@
   "scripts": {
     "prestart": "tsc --project tsconfig.json",
     "start": "node dist/index.js",
-    "dev": "nodemon --watch '**/*.ts' --exec ts-node src/index.ts -e ts"
+    "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --exec \"ts-node src/index.ts\""
   },
   "dependencies": {
     "axios": "^0.21.1",

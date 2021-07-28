@@ -8,7 +8,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start:backend": "echo start backend",
+    "start": "yarn --cwd backend/ start",
+    "dev": "yarn --cwd backend/ start:dev",
     "test": "cd smart_contracts/ && truffle test",
     "coverage": "cd smart_contracts/ && yarn coverage"
   }

@@ -32,6 +32,7 @@ export default class Home extends Vue {
   private chainId = 0;
   private chainToast: any;
   private marketplace: any;
+  private latestBlock: any;
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
@@ -52,6 +53,41 @@ export default class Home extends Vue {
     this.marketplace = new this.store.web3.eth.Contract(
       Marketplace.abi,
       this.contractAddress
+    );
+    this.latestBlock = await this.store.web3.eth.getBlockNumber();
+
+    // Listen for success
+    console.log("here dy");
+    this.marketplace.events.PurchaseSuccessEvent(
+      { filter: { address: this.address }, fromBlock: this.latestBlock + 1 },
+      async (error: any, event: any) => {
+        if (event) {
+          console.log("success");
+          Vue.$toast.success("Evaluation Point has been credited!", {
+            message: "Evaluation Point has been credited!",
+            duration: 5000,
+          });
+        }
+        this.latestBlock = await this.store.web3.eth.getBlockNumber();
+      }
+    );
+
+    // Listen for fail
+    this.marketplace.events.PurchaseFailEvent(
+      { filter: { address: this.address }, fromBlock: this.latestBlock + 1 },
+      async (error: any, event: any) => {
+        if (event) {
+          Vue.$toast.error(
+            "Evaluation Point purchase fail! Your funds will be refunded.",
+            {
+              message:
+                "Evaluation Point purchase fail! Your funds will be refunded.",
+              duration: 5000,
+            }
+          );
+        }
+        this.latestBlock = await this.store.web3.eth.getBlockNumber();
+      }
     );
   }
 

@@ -27,6 +27,8 @@ export default class Home extends Vue {
   private store = web3Stores.retrieve;
   private address = "";
   private amount = 0;
+  private chainId = 0;
+  private chainToast;
 
   async connect() {
     await this.store.connect();
@@ -40,8 +42,30 @@ export default class Home extends Vue {
   }
 
   @Watch("store.web3")
-  web3Changed() {
-    console.log(this.store.web3);
+  async web3Changed() {
+    this.chainId = await this.store.web3.eth.getChainId();
+    console.log(this.chainId);
+  }
+
+  @Watch("chainId")
+  chainChanged() {
+    // Since now we are testing on ganache, we must ensure they are on the correct chain!
+    if (this.chainId != 1337) {
+      this.chainToast = Vue.$toast.warning("You are not on Ganache!", {
+        message: "You are not on Ganache!",
+        duration: 0,
+        dismissible: false,
+      });
+    } else {
+      this.chainToast?.dismiss();
+    }
+  }
+
+  @Watch("store.ethereum")
+  checkChain() {
+    this.store.ethereum.on("chainChanged", (chainId: string) => {
+      this.chainId = parseInt(chainId, 16);
+    });
   }
 
   @Watch("amount")
@@ -112,7 +136,7 @@ export default class Home extends Vue {
       box-sizing: border-box;
       border-radius: 8px;
       margin-right: 16px;
-      padding: 8px;
+      padding: 12px;
       font-size: 18px;
 
       &:focus {

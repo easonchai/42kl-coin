@@ -21,7 +21,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from "vue-property-decorator";
 import { web3Stores } from "../store/web3";
-// import * as Marketplace from "../../../smart_contracts/build/contracts/Marketplace.json";
+import { ToastTypes } from "../utils/ToastTypes";
 const Marketplace = require("../../../smart_contracts/build/contracts/Marketplace.json");
 
 @Component({})
@@ -32,7 +32,6 @@ export default class Home extends Vue {
   private chainId = 0;
   private chainToast: any;
   private marketplace: any;
-  private latestBlock: any;
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
@@ -54,39 +53,36 @@ export default class Home extends Vue {
       Marketplace.abi,
       this.contractAddress
     );
-    this.latestBlock = await this.store.web3.eth.getBlockNumber();
 
     // Listen for success
-    console.log("here dy");
     this.marketplace.events.PurchaseSuccessEvent(
-      { filter: { address: this.address }, fromBlock: this.latestBlock + 1 },
+      {
+        filter: { address: this.address },
+        fromBlock: "latest",
+      },
       async (error: any, event: any) => {
         if (event) {
-          console.log("success");
-          Vue.$toast.success("Evaluation Point has been credited!", {
-            message: "Evaluation Point has been credited!",
-            duration: 5000,
-          });
+          this.openToast(
+            "Evaluation Point has been credited!",
+            ToastTypes.SUCCESS
+          );
         }
-        this.latestBlock = await this.store.web3.eth.getBlockNumber();
       }
     );
 
     // Listen for fail
     this.marketplace.events.PurchaseFailEvent(
-      { filter: { address: this.address }, fromBlock: this.latestBlock + 1 },
+      {
+        filter: { address: this.address },
+        fromBlock: "latest",
+      },
       async (error: any, event: any) => {
         if (event) {
-          Vue.$toast.error(
+          this.openToast(
             "Evaluation Point purchase fail! Your funds will be refunded.",
-            {
-              message:
-                "Evaluation Point purchase fail! Your funds will be refunded.",
-              duration: 5000,
-            }
+            ToastTypes.ERROR
           );
         }
-        this.latestBlock = await this.store.web3.eth.getBlockNumber();
       }
     );
   }
@@ -95,7 +91,7 @@ export default class Home extends Vue {
   chainChanged() {
     // Since now we are testing on ganache, we must ensure they are on the correct chain!
     if (this.chainId != 1337) {
-      this.chainToast = Vue.$toast.warning("You are not on Ganache!", {
+      this.chainToast = (Vue as any).$toast.warning("You are not on Ganache!", {
         message: "You are not on Ganache!",
         duration: 0,
         dismissible: false,
@@ -127,33 +123,28 @@ export default class Home extends Vue {
       .send({ from: this.address }, (error: any, transactionHash: any) => {
         if (error) {
           if (error.code == 4001) {
-            Vue.$toast.info("Transaction cancelled!", {
-              message: "Transaction cancelled!",
-              duration: 5000,
-            });
+            this.openToast("Transaction cancelled!", ToastTypes.INFO);
           } else {
-            Vue.$toast.error("Transaction failed!", {
-              message: "Transaction failed!",
-              duration: 5000,
-            });
+            this.openToast("Transaction failed!", ToastTypes.ERROR);
           }
         }
         if (transactionHash) {
-          console.log("transactionhash", transactionHash);
-          Vue.$toast.info("Transaction sent!", {
-            message: "Transaction sent!",
-            duration: 5000,
-          });
+          this.openToast("Transaction sent!", ToastTypes.INFO);
         }
       })
       .then((receipt: any) => {
         if (receipt.events.status) {
-          Vue.$toast.info("Transaction mined!", {
-            message: "Transaction mined!",
-            duration: 3000,
-          });
+          this.openToast("Transaction mined!", ToastTypes.INFO);
         }
       });
+  }
+
+  openToast(message: string, type: string) {
+    (Vue as any).$toast.open({
+      message,
+      duration: 3000,
+      type,
+    });
   }
 }
 </script>

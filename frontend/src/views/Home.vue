@@ -1,9 +1,20 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.webp" />
-    <h1>Welcome</h1>
-    <h2 v-if="address != ''">{{ address }}</h2>
-    <button v-else class="connect" @click="connect">Connect Wallet</button>
+    <button class="web3-address" @click="connect">
+      {{ address == "" ? "Connect Wallet" : address }}
+    </button>
+    <img alt="42 logo" src="../assets/logo.webp" class="logo" />
+    <h1 class="title">Evaluation Point Marketplace</h1>
+    <div class="purchase-container">
+      <input type="number" class="purchase-amount" min="0" v-model="amount" />
+      <button
+        class="purchase-button"
+        @click="purchaseEvalPoints"
+        :disabled="address == ''"
+      >
+        Purchase
+      </button>
+    </div>
   </div>
 </template>
 
@@ -15,6 +26,7 @@ import { web3Stores } from "../store/web3";
 export default class Home extends Vue {
   private store = web3Stores.retrieve;
   private address = "";
+  private amount = 0;
 
   async connect() {
     await this.store.connect();
@@ -31,6 +43,18 @@ export default class Home extends Vue {
   web3Changed() {
     console.log(this.store.web3);
   }
+
+  @Watch("amount")
+  amountChanged() {
+    let parsedAmount: any = parseInt(this.amount.toString());
+    if (Number.isNaN(parsedAmount)) this.amount = 0;
+    else if (parsedAmount < 0) this.amount = 0;
+    else this.amount = parsedAmount;
+  }
+
+  purchaseEvalPoints() {
+    console.log(`Purchasing ${this.amount} eval points`);
+  }
 }
 </script>
 
@@ -40,9 +64,83 @@ export default class Home extends Vue {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  background: #fcfcfc;
+  position: relative;
+  height: 100vh;
+  width: 100vw;
 
   img {
-    width: 360px;
+    width: 533px;
+  }
+
+  .web3-address {
+    position: absolute;
+    top: 36px;
+    right: 36px;
+    width: 256px;
+    height: 40px;
+    color: #0e5555;
+    background: rgba(61, 203, 203, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    padding: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .title {
+    font-weight: bold;
+    font-size: 36px;
+    line-height: 49px;
+    color: #333333;
+    margin-bottom: 105px;
+  }
+
+  .purchase {
+    &-container {
+      display: flex;
+      flex-direction: row;
+    }
+
+    &-amount {
+      color: #333333;
+      width: 250px;
+      height: 40px;
+      border: 1px solid #c9c9c9;
+      box-sizing: border-box;
+      border-radius: 8px;
+      margin-right: 16px;
+      padding: 8px;
+      font-size: 18px;
+
+      &:focus {
+        outline: none;
+        border: 1px solid #ababab;
+      }
+    }
+
+    &-button {
+      color: white;
+      width: 126px;
+      height: 40px;
+      background: #3dcbcb;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      font-weight: bold;
+      font-size: 18px;
+
+      &:active {
+        background: #10bdbd;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
   }
 }
 </style>

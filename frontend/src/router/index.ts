@@ -10,11 +10,11 @@ const routes: Array<RouteConfig> = [
     name: "Home",
     component: Home,
   },
-  {
-    path: "/purchase",
-    name: "Purchase",
-    component: () => import("../views/Purchase.vue"),
-  },
+  // {
+  //   path: "/purchase",
+  //   name: "Purchase",
+  //   component: () => import("../views/Purchase.vue"),
+  // },
 ];
 
 const router = new VueRouter({

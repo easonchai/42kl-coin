@@ -10,7 +10,7 @@
       <button
         class="purchase-button"
         @click="purchaseEvalPoints"
-        :disabled="address == ''"
+        :disabled="address == '' || amount <= 0"
       >
         Purchase
       </button>
@@ -21,6 +21,8 @@
 <script lang="ts">
 import { Component, Vue, Watch } from "vue-property-decorator";
 import { web3Stores } from "../store/web3";
+// import * as Marketplace from "../../../smart_contracts/build/contracts/Marketplace.json";
+const Marketplace = require("../../../smart_contracts/build/contracts/Marketplace.json");
 
 @Component({})
 export default class Home extends Vue {
@@ -28,7 +30,10 @@ export default class Home extends Vue {
   private address = "";
   private amount = 0;
   private chainId = 0;
-  private chainToast;
+  private chainToast: any;
+  private marketplace: any;
+
+  contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
   async connect() {
     await this.store.connect();
@@ -36,15 +41,18 @@ export default class Home extends Vue {
 
   @Watch("store.ethereum.selectedAddress")
   accountsChange() {
-    console.log(this.store.ethereum.selectedAddress);
     this.address = this.store.ethereum.selectedAddress;
     this.store.updateAddress(this.store.ethereum.selectedAddress);
   }
 
   @Watch("store.web3")
   async web3Changed() {
+    // Once web3 exists, we will get chain ID & initialize contract
     this.chainId = await this.store.web3.eth.getChainId();
-    console.log(this.chainId);
+    this.marketplace = new this.store.web3.eth.Contract(
+      Marketplace.abi,
+      this.contractAddress
+    );
   }
 
   @Watch("chainId")
@@ -78,6 +86,38 @@ export default class Home extends Vue {
 
   purchaseEvalPoints() {
     console.log(`Purchasing ${this.amount} eval points`);
+    this.marketplace.methods
+      .purchaseEvalPoints(this.amount)
+      .send({ from: this.address }, (error: any, transactionHash: any) => {
+        if (error) {
+          if (error.code == 4001) {
+            Vue.$toast.info("Transaction cancelled!", {
+              message: "Transaction cancelled!",
+              duration: 5000,
+            });
+          } else {
+            Vue.$toast.error("Transaction failed!", {
+              message: "Transaction failed!",
+              duration: 5000,
+            });
+          }
+        }
+        if (transactionHash) {
+          console.log("transactionhash", transactionHash);
+          Vue.$toast.info("Transaction sent!", {
+            message: "Transaction sent!",
+            duration: 5000,
+          });
+        }
+      })
+      .then((receipt: any) => {
+        if (receipt.events.status) {
+          Vue.$toast.info("Transaction mined!", {
+            message: "Transaction mined!",
+            duration: 3000,
+          });
+        }
+      });
   }
 }
 </script>

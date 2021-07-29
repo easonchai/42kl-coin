@@ -2,6 +2,9 @@ import BN from 'bn.js';
 import { Account, HttpProvider } from 'web3-core';
 import { axios } from '../utils/axios';
 import { initialize } from '../utils/common';
+import * as fs from 'fs';
+import * as path from 'path';
+
 const MAX_RETRIES = 5;
 
 function init() {
@@ -30,11 +33,15 @@ async function processPurchase(account: Account, marketplace: any, event: any) {
   console.log('🧾 Purchase received! Processing...');
 
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
-  // Idea 1: Map from buyer address to login ID using a json or db
-  const login = 'echai'; //getBuyerLoginId()
+  // Map from buyer address to login ID using
+  const login = getBuyerLoginId(buyer);
 
-  // Idea 2: Add new login id parameter in smart contract
-  // Get it here lol
+  console.log(login);
+  if (!login) {
+    // No login, just refund
+    await purchaseFail(account, marketplace, id);
+    return;
+  }
 
   const amount = evalPoints.toString(10);
   const url = `${login}/correction_points/add`;
@@ -121,6 +128,12 @@ async function purchaseFail(account: Account, marketplace: any, id: string) {
     console.log('❗ Refund failed. Notifying admin for manual refund');
     // Notify admin here
   }
+}
+
+function getBuyerLoginId(address: string): string {
+  const filename = path.resolve(__dirname, '../../profiles.json');
+  const jsonData = JSON.parse(fs.readFileSync(filename).toString());
+  return jsonData[address];
 }
 
 export { init };

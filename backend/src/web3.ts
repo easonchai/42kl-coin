@@ -1,37 +1,37 @@
-import BN from "bn.js";
-import { Account, HttpProvider } from "web3-core";
-import { axios } from "./utils/axios";
-import { initialize } from "./utils/common";
+import BN from 'bn.js';
+import { Account, HttpProvider } from 'web3-core';
+import { axios } from '../utils/axios';
+import { initialize } from '../utils/common';
 const MAX_RETRIES = 5;
 
 function init() {
-  console.log("📡 Initializing backend...");
+  console.log('📡 Initializing backend...');
   const { web3, account, marketplace } = initialize();
 
-  console.log("⚡ Connection established. Backend initialized!");
+  console.log('⚡ Connection established. Backend initialized!');
 
   // Listen to events
   marketplace.events.PurchaseEvalPointsEvent(async (err: any, event: any) => {
     if (err) {
-      console.error("⚠ Error on event", err);
+      console.error('⚠ Error on event', err);
       return;
     }
     await processPurchase(account, marketplace, event);
   });
 
-  process.on("SIGINT", () => {
-    console.log("🛑 Terminating gracefully...");
+  process.on('SIGINT', () => {
+    console.log('🛑 Terminating gracefully...');
     (web3.currentProvider as HttpProvider).disconnect();
     process.exit();
   });
 }
 
 async function processPurchase(account: Account, marketplace: any, event: any) {
-  console.log("🧾 Purchase received! Processing...");
+  console.log('🧾 Purchase received! Processing...');
 
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
   // Idea 1: Map from buyer address to login ID using a json or db
-  const login = "echai"; //getBuyerLoginId()
+  const login = 'echai'; //getBuyerLoginId()
 
   // Idea 2: Add new login id parameter in smart contract
   // Get it here lol
@@ -56,7 +56,7 @@ async function makeRequest(
   marketplace: any,
   id: any,
   amount: string,
-  tries: number
+  tries: number,
 ) {
   if (tries > MAX_RETRIES) {
     // If fail after 5 times, call purchaseFail
@@ -69,14 +69,14 @@ async function makeRequest(
   setTimeout(async () => {
     try {
       const response = await axios.post(
-        "http://ptsv2.com/t/mf71r-1627483833/post",
+        'http://ptsv2.com/t/mf71r-1627483833/post',
         null,
         {
           params: {
-            reason: "Earned it",
+            reason: 'Earned it',
             amount,
           },
-        }
+        },
       );
 
       // If succeed, call purchaseSuccess
@@ -84,11 +84,11 @@ async function makeRequest(
         purchaseSuccess(account, marketplace, id);
         return;
       } else {
-        console.log("⚠ POST request failed. Reattempting...");
+        console.log('⚠ POST request failed. Reattempting...');
         tries++;
       }
     } catch (error) {
-      console.log("Error with POST request: ", error.response.status);
+      console.log('Error with POST request: ', error.response.status);
       tries++;
     }
     makeRequest(account, marketplace, id, amount, tries++);
@@ -96,31 +96,31 @@ async function makeRequest(
 }
 
 async function purchaseSuccess(account: Account, marketplace: any, id: string) {
-  console.log("✅ Purchase Success!");
+  console.log('✅ Purchase Success!');
   const receipt = await marketplace.methods
     .purchaseSuccess(id)
     .send({ from: account.address });
   if (receipt.status) {
-    console.log("💵 Purchase processed.");
+    console.log('💵 Purchase processed.');
   } else {
     console.log(
-      "❗ Purchase failed. Notifying admin for manual acknowledgement"
+      '❗ Purchase failed. Notifying admin for manual acknowledgement',
     );
     // Notify admin here
   }
 }
 
 async function purchaseFail(account: Account, marketplace: any, id: string) {
-  console.log("❌ Purchase Failed! Refunding...");
+  console.log('❌ Purchase Failed! Refunding...');
   const receipt = await marketplace.methods
     .purchaseFail(id)
     .send({ from: account.address });
   if (receipt.status) {
-    console.log("💵 Refund complete.");
+    console.log('💵 Refund complete.');
   } else {
-    console.log("❗ Refund failed. Notifying admin for manual refund");
+    console.log('❗ Refund failed. Notifying admin for manual refund');
     // Notify admin here
   }
 }
 
-init();
+export { init };

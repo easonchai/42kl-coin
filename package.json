@@ -8,8 +8,10 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "yarn --cwd backend/ start",
-    "dev": "yarn --cwd backend/ dev",
+    "start:backend": "yarn --cwd backend/ start",
+    "dev:backend": "yarn --cwd backend/ start:dev",
+    "start:frontend": "yarn --cwd frontend/ start",
+    "dev:frontend": "yarn --cwd frontend/ serve",
     "test": "cd smart_contracts/ && truffle test",
     "coverage": "cd smart_contracts/ && yarn coverage",
     "migrate:dev": "yarn --cwd smart_contracts/ migrate:dev"

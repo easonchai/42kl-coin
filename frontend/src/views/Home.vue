@@ -1,7 +1,14 @@
 <template>
   <div class="home">
-    <button :class="[login ? '' : 'warning', 'web3-address']" @click="connect">
-      {{ address == "" ? "Connect Wallet" : address }}
+    <button v-if="address == ''" class="web3-address" @click="connect">
+      Connect Wallet
+    </button>
+    <button
+      v-else
+      :class="[login ? '' : 'warning', 'web3-address']"
+      @click="setLogin"
+    >
+      {{ login ? login : "Set Login ID" }}
     </button>
     <img alt="42 logo" src="../assets/logo.webp" class="logo" />
     <h1 class="title">Evaluation Point Marketplace</h1>
@@ -15,48 +22,57 @@
         Purchase
       </button>
     </div>
+    <Modal @close="saveLogin" v-if="showModal" />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Watch } from "vue-property-decorator";
 import { web3Stores } from "../store/web3";
+import { profileStores } from "../store/profile";
 import { ToastTypes } from "../utils/ToastTypes";
+import Modal from "@/components/Modal.vue";
 const Marketplace = require("../../../smart_contracts/build/contracts/Marketplace.json");
 
-@Component({})
+@Component({
+  components: {
+    Modal,
+  },
+})
 export default class Home extends Vue {
-  private store = web3Stores.retrieve;
+  private web3Store = web3Stores.retrieve;
+  private profileStore = profileStores.retrieve;
   private address = "";
   private amount = 0;
   private chainId = 0;
   private chainToast: any;
   private marketplace: any;
-  private login = "";
+  private login = "default";
+  private showModal = false;
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
   async connect() {
-    await this.store.connect();
+    await this.web3Store.connect();
   }
 
-  @Watch("store.ethereum.selectedAddress")
+  @Watch("web3Store.ethereum.selectedAddress")
   accountsChange() {
-    this.address = this.store.ethereum.selectedAddress;
-    this.store.updateAddress(this.store.ethereum.selectedAddress);
-    this.store.getLoginId(this.address);
+    this.address = this.web3Store.ethereum.selectedAddress;
+    this.web3Store.updateAddress(this.web3Store.ethereum.selectedAddress);
+    this.profileStore.getLoginId(this.address);
   }
 
-  @Watch("store.login")
+  @Watch("profileStore.login")
   loginChanged() {
-    this.login = this.store.login;
+    this.login = this.profileStore.login ?? "";
   }
 
-  @Watch("store.web3")
+  @Watch("web3Store.web3")
   async web3Changed() {
     // Once web3 exists, we will get chain ID & initialize contract
-    this.chainId = await this.store.web3.eth.getChainId();
-    this.marketplace = new this.store.web3.eth.Contract(
+    this.chainId = await this.web3Store.web3.eth.getChainId();
+    this.marketplace = new this.web3Store.web3.eth.Contract(
       Marketplace.abi,
       this.contractAddress
     );
@@ -108,9 +124,9 @@ export default class Home extends Vue {
     }
   }
 
-  @Watch("store.ethereum")
+  @Watch("web3Store.ethereum")
   checkChain() {
-    this.store.ethereum.on("chainChanged", (chainId: string) => {
+    this.web3Store.ethereum.on("chainChanged", (chainId: string) => {
       this.chainId = parseInt(chainId, 16);
     });
   }
@@ -153,6 +169,18 @@ export default class Home extends Vue {
       type,
     });
   }
+
+  setLogin() {
+    this.showModal = true;
+  }
+
+  saveLogin(id: string) {
+    this.profileStore.setLoginId({
+      address: this.address,
+      login: id,
+    });
+    this.showModal = false;
+  }
 }
 </script>
 
@@ -186,6 +214,11 @@ export default class Home extends Vue {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    &.warning {
+      background: rgba(237, 172, 7, 0.5);
+      color: #9c6300;
+    }
   }
 
   .title {

@@ -6,6 +6,8 @@ import {
   getModule,
 } from "vuex-module-decorators";
 import store from "../index";
+import { axios } from "@/utils/axios";
+import { SetLoginBody } from "@/models/profile";
 
 @Module({
   namespaced: true,
@@ -14,7 +16,7 @@ import store from "../index";
   store,
 })
 class Profile extends VuexModule {
-  login = "";
+  login: string | null = null;
   address = "";
 
   @Mutation
@@ -25,6 +27,34 @@ class Profile extends VuexModule {
   @Mutation
   setAddress(value: string) {
     this.address = value;
+  }
+
+  @Action
+  async getLoginId(address: string) {
+    let res;
+    try {
+      res = await axios.get("profiles/" + address);
+      this.context.commit("setLogin", res.data);
+      this.context.commit("setAddress", address);
+    } catch (error) {
+      console.log("Error making request to backend");
+    }
+  }
+
+  @Action
+  async setLoginId(body: SetLoginBody) {
+    const { address, login } = body;
+    let res;
+    try {
+      res = await axios.post("profiles/", {
+        address,
+        login,
+      });
+    } catch (error) {
+      console.log("Error making request to backend");
+    }
+    this.context.commit("setAddress", address);
+    this.context.commit("setLogin", login);
   }
 }
 

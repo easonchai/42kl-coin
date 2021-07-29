@@ -7,6 +7,7 @@ import {
 } from "vuex-module-decorators";
 import Web3 from "web3";
 import store from "../index";
+import { axios } from "@/utils/axios";
 
 @Module({
   namespaced: true,
@@ -18,6 +19,7 @@ class Web3Instance extends VuexModule {
   web3: Web3 = new Web3();
   address: any = null;
   ethereum: any = null;
+  login = "";
 
   @Mutation
   setWeb3(value: Web3) {
@@ -32,6 +34,11 @@ class Web3Instance extends VuexModule {
   @Mutation
   setEthereum(value: any) {
     this.ethereum = value;
+  }
+
+  @Mutation
+  setLogin(value: string) {
+    this.login = value;
   }
 
   @Action
@@ -58,6 +65,17 @@ class Web3Instance extends VuexModule {
   @Action
   async updateAddress(address: string) {
     this.context.commit("setAddress", address);
+  }
+
+  @Action
+  async getLoginId(address: string) {
+    let res;
+    try {
+      res = await axios.get("profiles/" + address);
+      this.context.commit("setLogin", res.data);
+    } catch (error) {
+      console.log("Error making request to backend");
+    }
   }
 }
 

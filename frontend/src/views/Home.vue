@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <button class="web3-address" @click="connect">
+    <button :class="[login ? '' : 'warning', 'web3-address']" @click="connect">
       {{ address == "" ? "Connect Wallet" : address }}
     </button>
     <img alt="42 logo" src="../assets/logo.webp" class="logo" />
@@ -32,6 +32,7 @@ export default class Home extends Vue {
   private chainId = 0;
   private chainToast: any;
   private marketplace: any;
+  private login = "";
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
@@ -43,6 +44,12 @@ export default class Home extends Vue {
   accountsChange() {
     this.address = this.store.ethereum.selectedAddress;
     this.store.updateAddress(this.store.ethereum.selectedAddress);
+    this.store.getLoginId(this.address);
+  }
+
+  @Watch("store.login")
+  loginChanged() {
+    this.login = this.store.login;
   }
 
   @Watch("store.web3")

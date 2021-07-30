@@ -5,10 +5,10 @@
     </button>
     <button
       v-else
-      :class="[login ? '' : 'warning', 'web3-address']"
+      :class="[profileStore.login ? '' : 'warning', 'web3-address']"
       @click="setLogin"
     >
-      {{ login ? login : "Set Login ID" }}
+      {{ profileStore.login ? profileStore.login : "Set Login ID" }}
     </button>
     <img alt="42 logo" src="../assets/logo.webp" class="logo" />
     <h1 class="title">Evaluation Point Marketplace</h1>
@@ -43,6 +43,7 @@ interface VueWithToast extends VueConstructor<Vue> {
 
 interface Error {
   code: number;
+  message: string;
 }
 
 @Component({
@@ -58,13 +59,12 @@ export default class Home extends Vue {
   private chainId = 0;
   private chainToast: ToastComponent | null = null;
   private marketplace: Contract | null = null;
-  private login = "default";
   private showModal = false;
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
-  async connect(): Promise<void> {
-    await this.web3Store.connect();
+  connect(): void {
+    this.web3Store.connect().then(() => this.accountsChange());
   }
 
   @Watch("web3Store.ethereum.selectedAddress")
@@ -72,11 +72,6 @@ export default class Home extends Vue {
     this.address = this.web3Store.ethereum.selectedAddress;
     this.web3Store.updateAddress(this.web3Store.ethereum.selectedAddress);
     this.profileStore.getLoginId(this.address);
-  }
-
-  @Watch("profileStore.login")
-  loginChanged(): void {
-    this.login = this.profileStore.login ?? "";
   }
 
   @Watch("web3Store.web3")

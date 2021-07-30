@@ -19,14 +19,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Vue, Watch } from "vue-property-decorator";
+import { Component, Emit, Vue } from "vue-property-decorator";
 
 @Component({})
 export default class Modal extends Vue {
   private login = "";
 
   @Emit("close")
-  saveLogin() {
+  saveLogin(): string {
     return this.login;
   }
 }

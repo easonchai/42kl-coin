@@ -44,9 +44,8 @@ class Profile extends VuexModule {
   @Action
   async setLoginId(body: SetLoginBody) {
     const { address, login } = body;
-    let res;
     try {
-      res = await axios.post("profiles/", {
+      await axios.post("profiles/", {
         address,
         login,
       });

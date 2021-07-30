@@ -1,4 +1,3 @@
-import BN from 'bn.js';
 import { Account, HttpProvider } from 'web3-core';
 import { axios } from '../utils/axios';
 import { initialize } from '../utils/common';
@@ -7,6 +6,24 @@ import * as path from 'path';
 
 const MAX_RETRIES = 5;
 
+interface EventData {
+  returnValues: {
+    [key: string]: any;
+  };
+  raw: {
+    data: string;
+    topics: string[];
+  };
+  event: string;
+  signature: string;
+  logIndex: number;
+  transactionIndex: number;
+  transactionHash: string;
+  blockHash: string;
+  blockNumber: number;
+  address: string;
+}
+
 function init() {
   console.log('📡 Initializing backend...');
   const { web3, account, marketplace } = initialize();
@@ -14,13 +31,15 @@ function init() {
   console.log('⚡ Connection established. Backend initialized!');
 
   // Listen to events
-  marketplace.events.PurchaseEvalPointsEvent(async (err: any, event: any) => {
-    if (err) {
-      console.error('⚠ Error on event', err);
-      return;
-    }
-    await processPurchase(account, marketplace, event);
-  });
+  marketplace.events.PurchaseEvalPointsEvent(
+    async (err: Error, event: EventData) => {
+      if (err) {
+        console.error('⚠ Error on event', err);
+        return;
+      }
+      await processPurchase(account, marketplace, event);
+    },
+  );
 
   process.on('SIGINT', () => {
     console.log('🛑 Terminating gracefully...');
@@ -29,7 +48,11 @@ function init() {
   });
 }
 
-async function processPurchase(account: Account, marketplace: any, event: any) {
+async function processPurchase(
+  account: Account,
+  marketplace: any,
+  event: EventData,
+) {
   console.log('🧾 Purchase received! Processing...');
 
   const { buyer, evalPoints, amountPaid, id } = event.returnValues;
@@ -46,14 +69,6 @@ async function processPurchase(account: Account, marketplace: any, event: any) {
   const amount = evalPoints.toString(10);
   const url = `${login}/correction_points/add`;
   console.log(url);
-
-  // Make POST request
-  // axios.post(url, null, {
-  //   params: {
-  //     reason: "Earned it",
-  //     amount,
-  //   }
-  // });
 
   makeRequest(account, marketplace, id, amount, 1);
 }
@@ -75,6 +90,13 @@ async function makeRequest(
 
   setTimeout(async () => {
     try {
+      // Make POST request
+      // axios.post(url, null, {
+      //   params: {
+      //     reason: "Earned it",
+      //     amount,
+      //   }
+      // });
       const response = await axios.post(
         'http://ptsv2.com/t/mf71r-1627483833/post',
         null,

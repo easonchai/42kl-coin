@@ -31,8 +31,19 @@ import { Component, Vue, Watch } from "vue-property-decorator";
 import { web3Stores } from "../store/web3";
 import { profileStores } from "../store/profile";
 import { ToastTypes } from "../utils/ToastTypes";
-import Modal from "@/components/Modal.vue";
+import { ToastApi, ToastComponent } from "vue-toast-notification";
+import Modal from "../components/Modal.vue";
+import { Contract, EventData } from "web3-eth-contract";
+import { VueConstructor } from "vue";
 const Marketplace = require("../../../smart_contracts/build/contracts/Marketplace.json");
+
+interface VueWithToast extends VueConstructor<Vue> {
+  $toast: ToastApi;
+}
+
+interface Error {
+  code: number;
+}
 
 @Component({
   components: {
@@ -45,31 +56,31 @@ export default class Home extends Vue {
   private address = "";
   private amount = 0;
   private chainId = 0;
-  private chainToast: any;
-  private marketplace: any;
+  private chainToast: ToastComponent | null = null;
+  private marketplace: Contract | null = null;
   private login = "default";
   private showModal = false;
 
   contractAddress = "0x8c145DeF007D580471732d9276Fc73217E69A235";
 
-  async connect() {
+  async connect(): Promise<void> {
     await this.web3Store.connect();
   }
 
   @Watch("web3Store.ethereum.selectedAddress")
-  accountsChange() {
+  accountsChange(): void {
     this.address = this.web3Store.ethereum.selectedAddress;
     this.web3Store.updateAddress(this.web3Store.ethereum.selectedAddress);
     this.profileStore.getLoginId(this.address);
   }
 
   @Watch("profileStore.login")
-  loginChanged() {
+  loginChanged(): void {
     this.login = this.profileStore.login ?? "";
   }
 
   @Watch("web3Store.web3")
-  async web3Changed() {
+  async web3Changed(): Promise<void> {
     // Once web3 exists, we will get chain ID & initialize contract
     this.chainId = await this.web3Store.web3.eth.getChainId();
     this.marketplace = new this.web3Store.web3.eth.Contract(
@@ -81,10 +92,10 @@ export default class Home extends Vue {
     this.marketplace.events.PurchaseSuccessEvent(
       {
         filter: { address: this.address },
-        fromBlock: "latest",
       },
-      async (error: any, event: any) => {
+      async (error: Error, event: EventData) => {
         if (event) {
+          console.log(event);
           this.openToast(
             "Evaluation Point has been credited!",
             ToastTypes.SUCCESS
@@ -97,9 +108,8 @@ export default class Home extends Vue {
     this.marketplace.events.PurchaseFailEvent(
       {
         filter: { address: this.address },
-        fromBlock: "latest",
       },
-      async (error: any, event: any) => {
+      async (error: Error, event: EventData) => {
         if (event) {
           this.openToast(
             "Evaluation Point purchase fail! Your funds will be refunded.",
@@ -111,39 +121,42 @@ export default class Home extends Vue {
   }
 
   @Watch("chainId")
-  chainChanged() {
+  chainChanged(): void {
     // Since now we are testing on ganache, we must ensure they are on the correct chain!
     if (this.chainId != 1337) {
-      this.chainToast = (Vue as any).$toast.warning("You are not on Ganache!", {
-        message: "You are not on Ganache!",
-        duration: 0,
-        dismissible: false,
-      });
+      this.chainToast = (Vue as VueWithToast).$toast.warning(
+        "You are not on Ganache!",
+        {
+          message: "You are not on Ganache!",
+          duration: 0,
+          dismissible: false,
+        }
+      );
     } else {
       this.chainToast?.dismiss();
     }
   }
 
   @Watch("web3Store.ethereum")
-  checkChain() {
+  checkChain(): void {
     this.web3Store.ethereum.on("chainChanged", (chainId: string) => {
       this.chainId = parseInt(chainId, 16);
     });
   }
 
   @Watch("amount")
-  amountChanged() {
-    let parsedAmount: any = parseInt(this.amount.toString());
+  amountChanged(): void {
+    let parsedAmount = parseInt(this.amount.toString());
     if (Number.isNaN(parsedAmount)) this.amount = 0;
     else if (parsedAmount < 0) this.amount = 0;
     else this.amount = parsedAmount;
   }
 
-  purchaseEvalPoints() {
+  purchaseEvalPoints(): void {
     console.log(`Purchasing ${this.amount} eval points`);
-    this.marketplace.methods
+    this.marketplace?.methods
       .purchaseEvalPoints(this.amount)
-      .send({ from: this.address }, (error: any, transactionHash: any) => {
+      .send({ from: this.address }, (error: Error, transactionHash: string) => {
         if (error) {
           if (error.code == 4001) {
             this.openToast("Transaction cancelled!", ToastTypes.INFO);
@@ -155,26 +168,26 @@ export default class Home extends Vue {
           this.openToast("Transaction sent!", ToastTypes.INFO);
         }
       })
-      .then((receipt: any) => {
+      .then((receipt: Contract) => {
         if (receipt.events.status) {
           this.openToast("Transaction mined!", ToastTypes.INFO);
         }
       });
   }
 
-  openToast(message: string, type: string) {
-    (Vue as any).$toast.open({
+  openToast(message: string, type: string): void {
+    (Vue as VueWithToast).$toast.open({
       message,
       duration: 3000,
       type,
     });
   }
 
-  setLogin() {
+  setLogin(): void {
     this.showModal = true;
   }
 
-  saveLogin(id: string) {
+  saveLogin(id: string): void {
     this.profileStore.setLoginId({
       address: this.address,
       login: id,
